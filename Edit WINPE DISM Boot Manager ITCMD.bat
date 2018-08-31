@@ -1,9 +1,7 @@
 @echo off
+title DISM Manager
 :tippytop
 setlocal EnableDelayedExpansion
-
-
-
 
 
 
@@ -26,6 +24,9 @@ if %errorlevel%==1 (
 )
 cd "%cdd%"
 if not exist "C:\WinPE_amd64" goto noadk
+if not exist "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\" goto noah
+
+
 if exist CreatingISO goto okiso
 if exist CreatingISO2 goto okiso2
 DISM >nul
@@ -45,8 +46,8 @@ if not exist mount (
 	if exist C:\WinPE_amd64\mount\Windows pause
 )
 cls
-title DISM ITCMD Boot Manager 2.0.1 by Lucas Elliott            Press 9 For Settings            %cd%
-echo IT COMMMAND BOOT MANAGER FOR WINPE VERSION 2.1 by Lucas Elliott      [(c) 2018 all rights reserved]
+title DISM ITCMD Boot Manager 2.3.17 by Lucas Elliott            Press 9 For Settings            %cd%
+echo IT COMMMAND BOOT MANAGER FOR WINPE VERSION 2.3 by Lucas Elliott      [(c) 2018 all rights reserved]
 echo =======================================================================================================
 call :c 0f "Mount Status: " /n
 if not exist mount call :c 0c "Not Mounted" /n /u
@@ -77,7 +78,7 @@ set yes=no1
 :cho
 if %yes%==yes call :c 08 "Invalid Option"
 set yes=yes
-choice /c "12345678" /n >nul
+choice /c "123456789" /n >nul
 title DISM ITCMD Boot Manager 2.0.1 by Lucas Elliott
 if %errorlevel%==9 goto setting
 if %errorlevel%==5 goto 5
@@ -558,6 +559,7 @@ call :c 0a "Would You like to Install the minimum requirements?"
 choice
 if %errorlevel%==2 goto noah2
 call :c 0a "Great! Downloading the Installation . . ."
+timeout /t 2 >nul
 bitsadmin /transfer myDownloadJob /download /priority High  http://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe "%cd%\adkSetup.exe"
 if not %errorlevel%==0 goto errnoah
 call :c 0a "Download Completed. Launching. Install may take a while . . ."
@@ -974,10 +976,3 @@ if %Underline%==False echo|set /p="[%c1%m[%c2%m%Text%[0m"
 if %Underline%==True echo|set /p="[4m[%c1%m[%c2%m%Text%[0m"
 endlocal
 exit /b
-
-
-
-
-
-
-
