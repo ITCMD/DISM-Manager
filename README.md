@@ -17,6 +17,7 @@ This program allows you to create and manage your WinPE drive! You can create yo
 - Install your programs to the system without logging in
 - Run your own free portable Windows server on any machine
 - and much more!
+- Scored a 56 on VirusTotal https://www.virustotal.com/#/file/b8536f57c61c6b83aee8ca85a38a8f9a7c60632941c96abe71b4719ec08d05b3/detection (only two triggers).
 
 # Requirements:
 - Windows 10 or later
