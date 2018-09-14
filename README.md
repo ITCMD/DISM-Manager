@@ -13,3 +13,4 @@ This program allows you to create and manage your WinPE drive! You can create yo
 # Requirements:
 - Windows 10 or later
 - DISM system and Windows ADK (It will install these for you if you do not have them).
+- Administrator Access
