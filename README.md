@@ -22,3 +22,6 @@ This program allows you to create and manage your WinPE drive! You can create yo
 - Windows 10 or later
 - DISM system and Windows ADK (It will install these for you if you do not have them).
 - Administrator Access
+
+Please consider referencing IT Command (http://www.itcommand.tech) if you use this program.
+While not required by license, I appreciate you keeping my name on the code.
