@@ -3,6 +3,14 @@ This program allows you to create and manage your WinPE drive! You can create yo
 
 ![Home Screen](https://s19.postimg.cc/yqp6n27wz/disk_inv.png "Screenshot of Home Screen")
 
+# Features:
+- Mount and edit WinPE systems from a portable drive or from your computer
+- Back Up your WinPE settings so you can restore them
+- See what files were added or removed before unmounting (saving)
+- Install to drive
+- Convert into an iso image
+- Optional sound played on finish of any task.
+
 # Possible Uses:
 - Change the password for an account without admin access
 - Recover lost documents from a crashed system
