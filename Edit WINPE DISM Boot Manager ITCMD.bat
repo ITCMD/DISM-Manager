@@ -318,7 +318,7 @@ goto top
 
 :cancel
 cls
-call :colorech 0a "Cancled. Cleaning Up . . ."
+call :c 0a "Cancled. Cleaning Up . . ."
 del /f /q old.txt
 del /f /q new.txt
 del /f /q mount2
