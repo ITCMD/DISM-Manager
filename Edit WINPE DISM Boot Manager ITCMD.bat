@@ -59,34 +59,113 @@ if not exist mount call :c 0b "%lst%"
 if exist mount call :callm
 echo ======================================================================================================
 call :c 0f "Please Select an option:"
-if not exist mount call :c 0f "1] Mount from C:\"
-if exist mount call :c 07 "1] Mount from C:\"
-if not exist mount call :c 0f "2] Mount from Drive"
-if exist mount call :c 07 "2] Mount from Drive"
-if exist mount call :c 0f "3] Unmount"
-if not exist mount call :c 07 "3] Unmount"
-if exist mount call :c 07 "4] Install from C to drive"
-if not exist mount call :c 0f "4] Install from C to drive"
-call :c 0f "5] Open Mount Folder"
-call :c 0f "6] Backup Manager"
-if exist mount call :c 07 "7] Install from C to iso"
-if not exist mount call :c 0f "7] Install from C to iso"
-if exist mount call :c 07 "8] Install from USB to iso"
-if not exist mount call :c 0f "8] Install from USB to iso"
-call :c 0f "9] Settings"
+if not exist mount call :c 0f " 1] Mount from C:\"
+if exist mount call :c 07 " 1] Mount from C:\"
+if not exist mount call :c 0f " 2] Mount from Drive"
+if exist mount call :c 07 " 2] Mount from Drive"
+if exist mount call :c 0f " 3] Unmount (save to drive)"
+if not exist mount call :c 07 " 3] Unmount (save to drive)"
+if exist mount call :c 07 " 4] Install from C to drive"
+if not exist mount call :c 0f " 4] Install from C to drive"
+call :c 0f " 5] Open Mount Folder"
+call :c 0f " 6] Backup Manager"
+if exist mount call :c 07 " 7] Install from C to iso"
+if not exist mount call :c 0f " 7] Install from C to iso"
+if exist mount call :c 07 " 8] Install from USB to iso"
+if not exist mount call :c 0f " 8] Install from USB to iso"
+call :c 0f " 9] Create WINPE Drive"
+call :c 0f "10] Settings"
 set yes=no1
 :cho
 if %yes%==yes call :c 08 "Invalid Option"
 set yes=yes
 choice /c "123456789" /n >nul
 title DISM ITCMD Boot Manager 2.0.1 by Lucas Elliott
-if %errorlevel%==9 goto setting
+if %errorlevel%==10 goto setting
 if %errorlevel%==5 goto 5
 if %errorlevel%==6 goto 6
 if exist mount if not %errorlevel%==3 goto cho
 if not exist mount if %errorlevel%==3 goto cho
 cls
 goto %errorlevel%
+
+
+:9
+cls
+echo Setting up Batch Deployment Kit enviornment . . .
+pushd "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
+@Echo off
+
+IF /I %PROCESSOR_ARCHITECTURE%==x86 (
+    IF NOT "%PROCESSOR_ARCHITEW6432%"=="" (
+        SET PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITEW6432%
+    )
+) ELSE IF /I NOT %PROCESSOR_ARCHITECTURE%==amd64 (
+    @echo Not implemented for PROCESSOR_ARCHITECTURE of %PROCESSOR_ARCHITECTURE%.
+    @echo Using "%ProgramFiles%"
+    
+    SET NewPath="%ProgramFiles%"
+
+    goto SetPath
+)
+SET regKeyPathFound=1
+SET wowRegKeyPathFound=1
+SET KitsRootRegValueName=KitsRoot10
+REG QUERY "HKLM\Software\Wow6432Node\Microsoft\Windows Kits\Installed Roots" /v %KitsRootRegValueName% 1>NUL 2>NUL || SET wowRegKeyPathFound=0
+REG QUERY "HKLM\Software\Microsoft\Windows Kits\Installed Roots" /v %KitsRootRegValueName% 1>NUL 2>NUL || SET regKeyPathFound=0
+if %wowRegKeyPathFound% EQU 0 (
+  if %regKeyPathFound% EQU 0 (
+    @echo KitsRoot not found, can't set common path for Deployment Tools
+    goto :EOF 
+  ) else (
+    SET regKeyPath=HKLM\Software\Microsoft\Windows Kits\Installed Roots
+  )
+) else (
+    SET regKeyPath=HKLM\Software\Wow6432Node\Microsoft\Windows Kits\Installed Roots
+)
+FOR /F "skip=2 tokens=2*" %%i IN ('REG QUERY "%regKeyPath%" /v %KitsRootRegValueName%') DO (SET KitsRoot=%%j)
+SET DandIRoot=%KitsRoot%Assessment and Deployment Kit\Deployment Tools
+SET WinPERoot=%KitsRoot%Assessment and Deployment Kit\Windows Preinstallation Environment
+SET WinPERootNoArch=%KitsRoot%Assessment and Deployment Kit\Windows Preinstallation Environment
+SET WindowsSetupRootNoArch=%KitsRoot%Assessment and Deployment Kit\Windows Setup
+SET USMTRootNoArch=%KitsRoot%Assessment and Deployment Kit\User State Migration Tool
+SET DISMRoot=%DandIRoot%\%PROCESSOR_ARCHITECTURE%\DISM
+SET BCDBootRoot=%DandIRoot%\%PROCESSOR_ARCHITECTURE%\BCDBoot
+SET ImagingRoot=%DandIRoot%\%PROCESSOR_ARCHITECTURE%\Imaging
+SET OSCDImgRoot=%DandIRoot%\%PROCESSOR_ARCHITECTURE%\Oscdimg
+SET WdsmcastRoot=%DandIRoot%\%PROCESSOR_ARCHITECTURE%\Wdsmcast
+SET HelpIndexerRoot=%DandIRoot%\HelpIndexer
+SET WSIMRoot=%DandIRoot%\WSIM
+SET ICDRoot=%KitsRoot%Assessment and Deployment Kit\Imaging and Configuration Designer\x86
+SET NewPath=%DISMRoot%;%ImagingRoot%;%BCDBootRoot%;%OSCDImgRoot%;%WdsmcastRoot%;%HelpIndexerRoot%;%WSIMRoot%;%WinPERoot%;%ICDRoot%
+:SetPath
+SET PATH=%NewPath:"=%;%PATH%
+cd /d "%DandIRoot%"
+echo Checking if required files exist . . .
+if not exist "C:\WinPE_amd64\" (
+	call :c 08 "Required files do not exist. Copying . . ."
+	copype amd64 C:\WinPE_amd64
+)
+:setdrivefornew
+echo Please Enter the drive letter of the USB drive you wish to make a WINPE Drive:
+set /p driveletterfornew=">"
+if not exist "%driveletterfornew%:\" (
+	echo Drive not found: %driveletterfornew%:\
+	pause
+	cls
+	goto setdrivefornew
+)
+cls
+call :c 0a "Creating Drive . . ."
+:resubmitwinpe
+call :MakeWinPEMedia /UFD C:\WinPE_amd64 %driveletterfornew%:
+if not "%errorlevel%"=="0"echo errorlevel: %errorlevel%
+popd
+pause
+goto top
+
+
+
 
 
 :nono
@@ -560,8 +639,10 @@ choice
 if %errorlevel%==2 goto noah2
 call :c 0a "Great! Downloading the Installation . . ."
 timeout /t 2 >nul
+if exist "%cd%\adksetup.exe" goto downloadedahalready
 bitsadmin /transfer myDownloadJob /download /priority High  http://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe "%cd%\adkSetup.exe"
 if not %errorlevel%==0 goto errnoah
+:downloadedahalready
 call :c 0a "Download Completed. Launching. Install may take a while . . ."
 adksetup /features OptionId.DeploymentTools OptionId.WindowsPreinstallationEnvironment
 call :c 0a "ADK setup is launched. Please restart this program when installation is complete."
@@ -914,6 +995,323 @@ del /f /q Lc1.exe
 goto backlc
 
 
+
+:MakeWinPEMedia
+@echo off
+setlocal
+
+rem
+rem Set variables for local use
+rem
+set TEMPL=media
+set FWFILES=fwfiles
+set DISKPARTSCRIPT=%TMP%\UFDFormatDiskpartScript.txt
+set EXITCODE=0
+
+rem
+rem Input validation
+rem
+if /i "%1"=="/?" goto usage
+if /i "%1"=="" goto usage
+if /i "%~2"=="" goto usage
+if /i "%~3"=="" goto usage
+if /i not "%~5"=="" goto usage
+if /i not "%1"=="/UFD" (
+  if /i not "%1"=="/ISO" goto usage
+)
+
+rem
+rem Based on parameters input, assign local variables
+rem
+if /i "%~2"=="/f" (
+  set FORCED=1
+  set WORKINGDIR=%~3
+  set DEST=%~4
+) else (
+  set FORCED=0
+  set WORKINGDIR=%~2
+  set DEST=%~3
+)
+
+rem
+rem Make sure the working directory exists
+rem
+if not exist "%WORKINGDIR%" (
+  echo ERROR: Working directory does not exist: "%WORKINGDIR%".
+  goto fail
+)
+
+rem
+rem Make sure the working directory is valid as per our requirements
+rem
+if not exist "%WORKINGDIR%\%TEMPL%" (
+  echo ERROR: Working directory is not valid: "%WORKINGDIR%".
+  goto fail
+)
+
+if not defined %TMP% (
+  set DISKPARTSCRIPT=.\UFDFormatDiskpartScript.txt
+)
+
+if /i "%1"=="/UFD" goto UFDWorker
+
+if /i "%1"=="/ISO" goto ISOWorker
+
+rem
+rem UFD section of the script, for creating bootable WinPE UFD
+rem
+:UFDWorker
+
+  rem
+  rem Make sure the user has administrator privileges
+  rem These will be required to format the drive and set the boot code
+  rem
+  set ADMINTESTDIR=%WINDIR%\System32\Test_%RANDOM%
+  mkdir "%ADMINTESTDIR%" 2>NUL
+  if errorlevel 1 (
+    echo ERROR: You need to run this command with administrator privileges.
+    goto fail
+  ) else (
+    rd /s /q "%ADMINTESTDIR%"
+  )
+
+  rem
+  rem Make sure the destination refers to a storage drive,
+  rem and is not any other type of path
+  rem
+  echo %DEST%| findstr /B /E /I "[A-Z]:" >NUL
+  if errorlevel 1 (
+    echo ERROR: Destination needs to be a disk drive, e.g F:.
+    goto fail
+  )
+
+  rem
+  rem Make sure the destination path exists
+  rem
+  if not exist "%DEST%" (
+    echo ERROR: Destination drive "%DEST%" does not exist.
+    goto fail
+  )
+
+  if %FORCED% EQU 1 goto UFDWorker_FormatUFD
+
+  rem
+  rem Confirm from the user that they want to format the drive
+  rem
+  echo WARNING, ALL DATA ON DISK DRIVE %DEST% WILL BE LOST!
+  choice /M "Proceed with Format "
+  if errorlevel 2 goto UFDWorker_NoFormatUFD
+  if errorlevel 1 goto UFDWorker_FormatUFD
+
+:UFDWorker_NoFormatUFD
+  echo UFD %DEST% will not be formatted; exiting.
+  goto cleanup
+
+:UFDWorker_FormatUFD
+  rem
+  rem Format the volume using diskpart, in FAT32 file system
+  rem
+  echo select volume=%DEST% > "%DISKPARTSCRIPT%"
+  echo format fs=fat32 label="WinPE" quick >> "%DISKPARTSCRIPT%"
+  echo active >> "%DISKPARTSCRIPT%"
+  echo Formatting %DEST%...
+  echo.
+  diskpart /s "%DISKPARTSCRIPT%" >NUL
+  set DISKPARTERR=%ERRORLEVEL%
+
+  del /F /Q "%DISKPARTSCRIPT%"
+  if errorlevel 1 (
+    echo WARNING: Failed to delete temporary DiskPart script "%DISKPARTSCRIPT%".
+  )
+   
+  if %DISKPARTERR% NEQ 0 (
+    echo ERROR: Failed to format "%DEST%"; DiskPart errorlevel %DISKPARTERR%.
+	if "%DISKPARTERR%"=="-2147024809" (
+		echo This error is caused by attempting to reformat a WInPE drive.
+		echo This error is not fatal. Attempting to handle.
+		goto handleerror
+	)	
+    goto fail
+  )
+
+  rem
+  rem Set the boot code on the volume using bootsect.exe
+  rem
+  echo Setting the boot code on %DEST%...
+  echo.
+  bootsect.exe /nt60 %DEST% /force /mbr >NUL
+  if errorlevel 1 (
+    echo ERROR: Failed to set the boot code on %DEST%.
+    goto fail
+  )
+
+  rem
+  rem We first decompress the source directory that we are copying from.
+  rem  This is done to work around an issue with xcopy when working with
+  rem  compressed NTFS source directory.
+  rem
+  rem Note that this command will not cause an error on file systems that
+  rem  do not support compression - because we do not use /f.
+  rem
+  compact /u "%WORKINGDIR%\%TEMPL%" >NUL
+  if errorlevel 1 (
+    echo ERROR: Failed to decompress "%WORKINGDIR%\%TEMPL%".
+    goto fail
+  )
+
+  rem
+  rem Copy the media files from the user-specified working directory
+  rem
+  echo Copying files to %DEST%...
+  echo.
+  xcopy /herky "%WORKINGDIR%\%TEMPL%\*.*" "%DEST%\" >NUL
+  if errorlevel 1 (
+    echo ERROR: Failed to copy files to "%DEST%\".
+    goto fail
+  )
+
+  goto success
+
+rem
+rem ISO section of the script, for creating bootable ISO image
+rem
+:ISOWorker
+
+  rem
+  rem Make sure the destination refers to an ISO file, ending in .ISO
+  rem
+  echo %DEST%| findstr /E /I "\.iso" >NUL
+  if errorlevel 1 (
+    echo ERROR: Destination needs to be an .ISO file.
+    goto fail
+  )
+
+  if not exist "%DEST%" goto ISOWorker_OscdImgCommand
+
+  if %FORCED% EQU 1 goto ISOWorker_CleanDestinationFile
+
+  rem
+  rem Confirm from the user that they want to overwrite the existing ISO file
+  rem
+  choice /M "Destination file %DEST% exists, overwrite it "
+  if errorlevel 2 goto ISOWorker_DestinationFileExists
+  if errorlevel 1 goto ISOWorker_CleanDestinationFile
+
+:ISOWorker_DestinationFileExists
+  echo Destination file %DEST% will not be overwritten; exiting.
+  goto cleanup
+
+:ISOWorker_CleanDestinationFile
+  rem
+  rem Delete the existing ISO file
+  rem
+  del /F /Q "%DEST%"
+  if errorlevel 1 (
+    echo ERROR: Failed to delete "%DEST%".
+    goto fail
+  )
+
+:ISOWorker_OscdImgCommand
+
+  rem
+  rem Set the correct boot argument based on availability of boot apps
+  rem
+  set BOOTDATA=1#pEF,e,b"%WORKINGDIR%\%FWFILES%\efisys.bin"
+  if exist "%WORKINGDIR%\%FWFILES%\etfsboot.com" (
+    set BOOTDATA=2#p0,e,b"%WORKINGDIR%\%FWFILES%\etfsboot.com"#pEF,e,b"%WORKINGDIR%\%FWFILES%\efisys.bin"
+  )
+
+  rem
+  rem Create the ISO file using the appropriate OSCDImg command
+  rem
+  echo Creating %DEST%...
+  echo.
+  oscdimg -bootdata:%BOOTDATA% -u1 -udfver102 "%WORKINGDIR%\%TEMPL%" "%DEST%" >NUL
+  if errorlevel 1 (
+    echo ERROR: Failed to create "%DEST%" file.
+    goto fail
+  )
+
+  goto success
+
+:success
+set EXITCODE=0
+echo.
+echo Success
+echo.
+goto cleanup
+
+:usage
+set EXITCODE=1
+echo Creates bootable WinPE USB flash drive or ISO file.
+echo.
+echo MakeWinPEMedia {/ufd ^| /iso} [/f] ^<workingDirectory^> ^<destination^>
+echo.
+echo  /ufd              Specifies a USB Flash Drive as the media type.
+echo                    NOTE: THE USB FLASH DRIVE WILL BE FORMATTED.
+echo  /iso              Specifies an ISO file (for CD or DVD) as the media type.
+echo  /f                Suppresses prompting to confirm formatting the UFD
+echo                    or overwriting existing ISO file.
+echo  workingDirectory  Specifies the working directory created using copype.cmd
+echo                    The contents of the ^<workingDirectory^>\media folder
+echo                    will be copied to the UFD or ISO.
+echo  destination       Specifies the UFD volume or .ISO path and file name.
+echo.
+echo  Examples:
+echo    MakeWinPEMedia /UFD C:\WinPE_amd64 G:
+echo    MakeWinPEMedia /UFD /F C:\WinPE_amd64 H:
+echo    MakeWinPEMedia /ISO C:\WinPE_x86 C:\WinPE_x86\WinPE_x86.iso
+goto cleanup
+
+:fail
+set EXITCODE=1
+goto cleanup
+
+:cleanup
+endlocal & exit /b %EXITCODE%
+
+
+:handleerror
+echo LIST VOLUME | DISKPART >"%temp%\DiskpartOut.temp"
+find "WINPE" "%temp%\Diskpartout.temp" /C | find "1" >nul
+if not %errorlevel%==0 (
+	echo More than one WINPE Drive is inserted. Please Remove all
+	echo except for the one you want to create now in order to handle this error.
+	echo then press any key.
+	pause
+	goto handleerror
+)
+echo LIST VOLUME ^| diskpart | find "WINPE" >"%temp%\FindWINPEDRIVE.txt"
+set volnum=nul
+find "Volume 0" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=0"
+find "Volume 1" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=1"
+find "Volume 2" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=2"
+find "Volume 3" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=3"
+find "Volume 4" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=4"
+find "Volume 5" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=5"
+find "Volume 6" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=6"
+find "Volume 7" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=7"
+find "Volume 8" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=8"
+find "Volume 9" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=9"
+find "Volume 10" "%temp%\FindWINPEDRIVE.txt" >nul
+if "%errorlevel%==1 set volnum=10"
+if "%volnum%"=="nul" (
+	echo Fatal error: Too many volumes are plugged in to this PC to calculate.
+)
+echo Repairing Drive . . .
+echo SELECT VOLUME %volnum% ^&echo CLEAN ^&echo CONVERT MBR ^&echo create partition primary ^&echo format fs=fat32 quick label="WINPE" ^&echo assign letter D| DISKPART >nul
+echo Resubmitting . . .
+goto resubmitwinpe
 :c
 :color
 Rem use:                             call :color HexColorCodeLikeInColorCommand "Text to say" /u(underline) /n(Does no create new like)
