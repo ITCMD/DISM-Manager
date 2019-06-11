@@ -43,10 +43,11 @@ if not exist mount (
 	if exist C:\WinPE_amd64\mount\Windows call :c 0c "Locally the Drive is set to not mounted, However some mounted files still exist on the PC."
 	if exist C:\WinPE_amd64\mount\Windows call :c 0c "If you have moved directories with this program since mount it may have caused this."
 	if exist C:\WinPE_amd64\mount\Windows call :c 08 "Opening the mount folder should tell you if this is true."
+	if exist C:\WinPE_amd64\mount\Windows call :c 08 "If there are only a few files remaining, running Cleanup in Settings will help."
 	if exist C:\WinPE_amd64\mount\Windows pause
 )
 cls
-title DISM ITCMD Boot Manager 2.3.17 by Lucas Elliott            Press 9 For Settings            %cd%
+title DISM ITCMD Boot Manager 2.3.17 by Lucas Elliott            Press S For Settings            %cd%
 echo IT COMMMAND BOOT MANAGER FOR WINPE VERSION 2.3 by Lucas Elliott      [(c) 2018 all rights reserved]
 echo =======================================================================================================
 call :c 0f "Mount Status: " /n
@@ -74,12 +75,12 @@ if not exist mount call :c 0f " 7] Install from C to iso"
 if exist mount call :c 07 " 8] Install from USB to iso"
 if not exist mount call :c 0f " 8] Install from USB to iso"
 call :c 0f " 9] Create WINPE Drive"
-call :c 0f "10] Settings"
+call :c 0f " S] Settings"
 set yes=no1
 :cho
 if %yes%==yes call :c 08 "Invalid Option"
 set yes=yes
-choice /c "123456789" /n >nul
+choice /c "123456789S" /n >nul
 title DISM ITCMD Boot Manager 2.0.1 by Lucas Elliott
 if %errorlevel%==10 goto setting
 if %errorlevel%==5 goto 5
