@@ -187,7 +187,7 @@ echo Please Enter the Drive name (example: E:)
 set /p drve=">"
 if not exist %drve%\boot\*.* goto nono
 cls
-call :c 0a "This will create an iso on your Desktop folder called WinPE_USB_amd64.iso from %drve%:\ Okay?"
+call :c 0a "This will create an iso on your Desktop folder called WinPE_USB_amd64.iso from %drve%\ Okay?"
 choice
 if %errorlevel%==2 goto top
 cls
@@ -482,6 +482,7 @@ goto top
 if not exist C:\Backup_WinPE_amd64_mount call :c 0c "WARNING: " /n & call :c 0f "This is the First Backup and May Take A While."
 call :backup1 C:\WinPE_amd64\mount C:\Backup_WinPE_amd64_mount .metadata
 dir /b /s C:\Win_PE_amd64\mount> lastbkpdir
+echo if File Verification Failed, confirm it manually in C:\Backup_WinPE_amd64_mount by checking that your files are there.
 call :c 0a "Completed."
 if not exist sound echo  
 pause
