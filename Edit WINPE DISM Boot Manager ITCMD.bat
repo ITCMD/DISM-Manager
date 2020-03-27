@@ -26,7 +26,7 @@ cd "%cdd%"
 if not exist "C:\WinPE_amd64" goto noadk
 if not exist "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\" goto noah
 
-
+if exist CreatingISOTransfer goto continuefromtransfer
 if exist CreatingISO goto okiso
 if exist CreatingISO2 goto okiso2
 DISM >nul
@@ -70,10 +70,10 @@ if exist mount call :c 07 " 4] Install from C to drive"
 if not exist mount call :c 0f " 4] Install from C to drive"
 call :c 0f " 5] Open Mount Folder"
 call :c 0f " 6] Backup Manager"
-if exist mount call :c 07 " 7] Install from C to iso"
-if not exist mount call :c 0f " 7] Install from C to iso"
-if exist mount call :c 07 " 8] Install from USB to iso"
-if not exist mount call :c 0f " 8] Install from USB to iso"
+if exist mount call :c 07 " 7] Create WinPE ISO"
+if not exist mount call :c 0f " 7] Create WinPE ISO"
+if exist mount call :c 07 " 8] Transfer USB to ISO"
+if not exist mount call :c 0f " 8] Transfer USB to ISO"
 call :c 0f " 9] Create WINPE Drive"
 call :c 0f " S] Settings"
 set yes=no1
@@ -183,10 +183,44 @@ del /f /q "C:\user\%username%\Desktop\WinPE_USB_amd64.iso"
 goto overwrit2
 :8
 cls
+call :c 0f "	      _____________________"
+call :c 0f "	 ____[                     ]"
+call :c 0f "	[  o [  Insert Flash Drive ]"
+call :c 0f "	[__o_[   To Transfer Now.  ]"
+call :c 0f "	     [_____________________]"
+pause
+set d=not
+if exist D:\ vol D:>testD
+if not exist D:\ echo not >testD
+if exist E:\ vol E:>testE
+if not exist E:\ echo not >testE
+if exist F:\ vol F:>TestF
+if not exist F:\ echo not >testF
+if exist G:\ vol G:>TestG
+if not exist G:\ echo not >testG
+find "is WINPE" "TestD" >nul
+if %errorlevel%==0 set d=D
+find "is WINPE" "TestE" >nul
+if %errorlevel%==0 set d=E
+find "is WINPE" "TestF" >nul
+if %errorlevel%==0 set d=F
+find "is WINPE" "TestG" >nul
+if %errorlevel%==0 set d=G
+if "%d%"=="not" goto seltrans
+echo %d%:\ is a Windows PE Drive. Use this drive?
+choice
+if %errorlevel%==2 goto seltrans
+goto transfer
+:seltrans
 echo Please Enter the Drive name (example: E:)
 set /p drve=">"
 if not exist %drve%\boot\*.* goto nono
 cls
+:transfer
+call :c 0c "WARNING:" /n
+call :c 0f " Due to how an ADK tool works, this program will exit when half way through the process."
+call :c 0f "         You will need to launch the tool again to complete the setup."
+pause
 call :c 0a "This will create an iso on your Desktop folder called WinPE_USB_amd64.iso from %drve%\ Okay?"
 choice
 if %errorlevel%==2 goto top
@@ -197,14 +231,58 @@ cls
 call :c 0c "WARNING:" /n
 call :c 0f " Due to how an ADK tool works, this program will exit on completion. It will Continue on Startup"
 pause
-call :c 0a "Starting create ISO . . ."
-echo. >CreatingISO2
-pushd C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg
-"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\MakeWinPEMedia.cmd" /ISO %drve% "C:\user\%username%\Desktop\WinPE_USB_amd64.iso"
+call :c 0a "Copying files from %drive% . . ."
+call :backup2 C:\WinPE_amd64\mount C:\WinPE_Transfer_To_iso .metadata
 timeout /t 2 >nul
-popd
-del /f /q CreatingISO
-call :FAIL
+call :c 0a "Creating ISO to transfer files to to . . ."
+call :c 0a "Starting create ISO . . ."
+echo. >CreatingISOTransfer
+pushd C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg
+"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\MakeWinPEMedia.cmd" /ISO C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
+timout /t 2 >nul
+echo Setup Failed.
+:continuefromtransfer
+if not exist "C:\user\%username%\Desktop\WinPE_USB_amd64.iso" (
+	echo failed to create iso.
+	pause
+	goto top
+)
+call :c 0a "Initial ISO Created, unmounting drive to continue setup . . ."
+Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /commit
+call :c 0a "Mounting ISO to add files . . .:
+powershell Mount-DiskImage -ImagePath "C:\user\%username%\Desktop\WinPE_USB_amd64.iso"
+call :c 0a "Mounting ISO's WinPE . . ."
+set d=not
+echo list vol | diskpart >diskpart.txt
+find "D   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=D
+find "E   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=E
+find "F   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=F
+find "G   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=G
+find "H   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=H
+find "I   DVD_ROM" "diskpart.txt" >nul
+if "%errorlevel%"=="0" set d=I
+if not exist "%D%:\sources\boot.wim" echo (
+	echo mounted image does not contain WINPE. Make sure you dont have any dvds in your computer.
+)
+
+Dism /Mount-Image /ImageFile:"%D%:\sources\boot.wim" /index:1 /MountDir:"C:\WinPE_amd64\mount"
+call :c 0a "Copying files to ISO's WinPE . . ."
+xcopy "C:\WinPE_Transfer_To_iso" "C:\WinPE_amd64\mount" /Y /E /C /H /R /K /O /Q
+call :c 0a "Finished copying files. Unmounting ISO's WinPE . . ."
+Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /commit
+call :c 0a "Unmounting ISO . . ."
+powershell Dismount-DiskImage -ImagePath  "C:\user\%username%\Desktop\WinPE_USB_amd64.iso"
+echo.
+echo.
+echo.
+echo ISO Creation completed.
+pause
+goto top
 
 
 :okiso2
@@ -627,6 +705,50 @@ echo // finished backup at %logtimestamp% >> %log%
 REM move the logging
 if not exist "C:\.amdbackup_log" mkdir C:\.amdbackup_log
 move %log% C:\.amdbackup_log >nul
+exit /b
+
+:backup2
+REM get start time
+for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
+set "YY=%dt:~2,2%" & set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
+set "HH=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
+
+REM set "datestamp=%YYYY%%MM%%DD%" & set "timestamp=%HH%%Min%%Sec%"
+set "fullstamp=%YYYY%-%MM%-%DD%_%HH%-%Min%-%Sec%"
+set "logtimestamp=%YYYY%.%MM%.%DD% %HH%:%Min%:%Sec%"
+
+REM actual copy
+set source=%1
+set destination=%2
+
+REM create the exclusion list
+set exclusion=%3
+set exclusion=%exclusion:"=%
+(for %%i in (%exclusion%) do echo %%i) > exclusion.txt
+
+REM set the file name for the logging data
+set log=log-%fullstamp%.txt
+
+REM start the backup process
+echo // started copy at %logtimestamp% > %log%
+echo // from %~f1 to %~f2\ >> %log%
+
+echo ---- >> %log%
+xcopy %source% %destination% /S /E /C /O /D /H /R /Y /V /I /EXCLUDE:exclusion.txt >> %log%
+echo ---- >> %log%
+del /f /q exclusion.txt
+
+REM get finish time
+for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
+set "YY=%dt:~2,2%" & set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
+set "HH=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
+set "logtimestamp=%YYYY%.%MM%.%DD% %HH%:%Min%:%Sec%"
+
+echo // finished copy at %logtimestamp% >> %log%
+
+REM move the logging
+if not exist "C:\.amdtransfer_log" mkdir C:\.amdtransfer_log
+move %log% C:\.amdtransfer_log >nul
 exit /b
 
 :noah
