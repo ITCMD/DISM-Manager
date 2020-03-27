@@ -638,7 +638,7 @@ cls
 call :c 0a "Would You like to Install the minimum requirements?"
 choice
 if %errorlevel%==2 goto noah2
-call :c 0a "Great! Downloading the Installation . . ."
+call :c 0a "Great. Downloading the Installation . . ."
 timeout /t 2 >nul
 if exist "%cd%\adksetup.exe" goto downloadedahalready
 if exist "C:\Windows\System32\curl.exe" (
@@ -652,7 +652,8 @@ if not %errorlevel%==0 goto errnoah
 :downloadedahalready
 call :c 0a "Download Completed. Launching. Install may take a while . . ."
 adksetup /features OptionId.DeploymentTools OptionId.WindowsPreinstallationEnvironment
-call :c 0a "ADK setup is launched. Please restart this program when installation is complete."
+call :c 0a "ADK setup is launched. Press Next through the install."
+call :c 0a "Please restart this program when installation is complete."
 pause
 exit
 
