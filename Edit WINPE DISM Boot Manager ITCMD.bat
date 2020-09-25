@@ -1,4 +1,6 @@
 @echo off
+if not exist "Bin\" md "Bin\"
+cd Bin
 title DISM Manager
 :tippytop
 setlocal EnableDelayedExpansion
