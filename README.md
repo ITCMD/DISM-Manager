@@ -1,5 +1,5 @@
-# WinPE DISM-Manager
-This program allows you to create and manage your WinPE drive! You can create your own portable flash drive running a customizable windows that runs your batch code on startup! This windows system runs on a temprary drive X: and has pure, unrestricted access to any hard drives on the system! (Not including encrypted hard drives).
+# WinPE DISM-Manager (WDM)
+WDM allows you to create and manage your WinPE drive! You can create your own portable flash drive running a customizable windows that runs your batch code on startup! This windows system runs on a temprary drive X: and has pure, unrestricted access to any hard drives on the system! (Not including encrypted hard drives).
 
 ![Home Screen](https://s19.postimg.cc/yqp6n27wz/disk_inv.png "Screenshot of Home Screen")
 
@@ -23,10 +23,10 @@ This program allows you to create and manage your WinPE drive! You can create yo
 
 # Requirements:
 - Windows 10 or later
-- DISM system and Windows ADK (It will install these for you if you do not have them)
+- DISM system and Windows ADK (It will install these for you if you do not have them).
 - Administrator Access.
 
-Please consider referencing IT Command (http://www.itcommand.tech) if you use this program.
+Please consider referencing IT Command (http://www.itcommand.net) if you use this program.
 While not required by license, I appreciate you keeping my name on the code.
 
 ## Notice:
