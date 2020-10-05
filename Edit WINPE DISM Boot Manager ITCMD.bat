@@ -62,14 +62,14 @@ if not exist mount call :c 0b "%lst%"
 if exist mount call :callm
 echo ======================================================================================================
 call :c 0f "Please Select an option:"
-if not exist mount call :c 0f " 1] Mount from C:\"
+if not exist mount call :c 0f " 1] Mount from C:\ (to edit base install)"
 if exist mount call :c 07 " 1] Mount from C:\"
 if not exist mount call :c 0f " 2] Mount from Drive"
 if exist mount call :c 07 " 2] Mount from Drive"
 if exist mount call :c 0f " 3] Unmount (save to drive)"
 if not exist mount call :c 07 " 3] Unmount (save to drive)"
-if exist mount call :c 07 " 4] Install from C to drive"
-if not exist mount call :c 0f " 4] Install from C to drive"
+if exist mount call :c 07 " 4] Unmount and discard (does not save to drive)"
+if not exist mount call :c 0f " 4] Unmount and discard (does not save to drive)"
 call :c 0f " 5] Open Mount Folder"
 call :c 0f " 6] Backup Manager"
 if exist mount call :c 07 " 7] Create WinPE ISO"
@@ -464,14 +464,15 @@ del /f /q new.txt
 del /f /q mount2
 echo.
 call :c 0a "Begining Unmount . . ."
+set _fail=false
 Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /commit
 if not exist sound echo  
-if not "%errorlevel%"=="0" call :Fail
-del /f /q mount
+if not "%errorlevel%"=="0" set _fail=true
 del /f /q type
 del /f /q time
 del /f /q date
 if exist mount2 del /f /q mount2
+if "%_fail%"=="true" call :Fail
 call :c 0a "Completed."
 pause
 goto top
@@ -542,6 +543,52 @@ pause
 goto top
 
 :4
+cls
+call :c 0a "Loading Preview of changes to discard. Please Wait . . ."
+dir /b /s C:\WinPE_amd64\mount >mount2
+lc mount mount2
+cls
+if not exist backups call :c 0b "Changes Made to Mounted Drive"
+if exist backups call :c 0b "Changes Made to Mounted Drive Since Backup"
+echo ===================================================
+call :c 0a "Added Files and Folders:"
+type new.txt
+echo.
+call :c 0c "Removed Files and Folders:"
+type old.txt
+echo.
+echo ===================================================
+echo Are You Sure You want to continue with Unmount?
+echo :c c0 "THIS WILL DELETE ALL CHANGES MADE SINCE MOUNT!"
+choice
+if %errorlevel%==2 goto top
+echo Preparing to discard changes . . .
+call :c 08 "Press C to Cancel Now . . ."
+choice /c "QC" /n /d "Q" /t "4" >nul
+if not %errorlevel%==1 goto cancel
+del /f /q old.txt
+del /f /q new.txt
+del /f /q mount2
+echo.
+call :c 0a "Begining Unmount . . ."
+set _fail=false
+Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /discard
+if not exist sound echo  
+if not "%errorlevel%"=="0" set _fail=true
+del /f /q mount
+del /f /q type
+del /f /q time
+del /f /q date
+if exist mount2 del /f /q mount2
+if "%_fail%"=="true" call :Fail
+call :c 0a "Completed."
+pause
+goto top
+
+
+
+
+:oldfour removed duplicate create
 call :c 0f "	      _____________________"
 call :c 0f "	 ____[                     ]"
 call :c 0f "	[  o [  Insert Flash Drive ]"
