@@ -68,24 +68,25 @@ if not exist mount call :c 0f " 2] Mount from Drive"
 if exist mount call :c 07 " 2] Mount from Drive"
 if exist mount call :c 0f " 3] Unmount (save to drive)"
 if not exist mount call :c 07 " 3] Unmount (save to drive)"
-if exist mount call :c 07 " 4] Unmount and discard (does not save to drive)"
-if not exist mount call :c 0f " 4] Unmount and discard (does not save to drive)"
+if not exist mount call :c 07 " 4] Unmount and discard (does not save to drive)"
+if exist mount call :c 0f " 4] Unmount and discard (does not save to drive)"
 call :c 0f " 5] Open Mount Folder"
 call :c 0f " 6] Backup Manager"
 if exist mount call :c 07 " 7] Create WinPE ISO"
 if not exist mount call :c 0f " 7] Create WinPE ISO"
-if exist mount call :c 07 " 8] Transfer USB to ISO"
-if not exist mount call :c 0f " 8] Transfer USB to ISO"
+if exist mount call :c 07 " 8] Transfer USB to ISO [Currently not working]"
+if not exist mount call :c 0f " 8] Transfer USB to ISO [Currently not working]"
 call :c 0f " 9] Create WINPE Drive"
 call :c 0f " S] Settings"
 set yes=no1
 :cho
-if %yes%==yes call :c 08 "Invalid Option"
+if %yes%==yes call :c 08 "Invalid Option: %errorlevel%"
 set yes=yes
 choice /c "123456789S" /n >nul
 title DISM ITCMD Boot Manager 2.0.1 by Lucas Elliott
 if %errorlevel%==10 goto setting
 if %errorlevel%==5 goto 5
+if %errorlevel%==4 goto 4
 if %errorlevel%==6 goto 6
 if exist mount if not %errorlevel%==3 goto cho
 if not exist mount if %errorlevel%==3 goto cho
@@ -162,7 +163,7 @@ cls
 call :c 0a "Creating Drive . . ."
 :resubmitwinpe
 call :MakeWinPEMedia /UFD C:\WinPE_amd64 %driveletterfornew%:
-if not "%errorlevel%"=="0"echo errorlevel: %errorlevel%
+if not "%errorlevel%"=="0" echo errorlevel: %errorlevel%
 popd
 pause
 goto top
@@ -240,7 +241,7 @@ call :c 0a "Creating ISO to transfer files to to . . ."
 call :c 0a "Starting create ISO . . ."
 echo. >CreatingISOTransfer
 pushd C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg
-"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\MakeWinPEMedia.cmd" /ISO C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
+"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\MakeWinPEMedia.cmd" /ISO C:\WinPE_amd64\mount C:\WinPE_amd64\WinPE_amd64.iso
 timout /t 2 >nul
 echo Setup Failed.
 :continuefromtransfer
@@ -298,6 +299,7 @@ goto top
 :failiso
 cls
 call :c 0c "It seems the iso creation failed." /u
+del /f /q CreatingISO* >nul
 pause
 goto top
 
@@ -335,7 +337,7 @@ call :FAIL
 :okiso
 call :c 0f "Testing ISO Status..."
 del /f /q CreatingISO
-if not exist C:\WinPE_amd64\WinPE_amd64.iso goto failiso
+if not exist "C:\WinPE_amd64\WinPE_amd64.iso" goto failiso
 call :c 0a "Completed. Test Shows Positive Results" 
 pause
 goto top
@@ -347,6 +349,7 @@ echo ITs the end of the world.... doo doo dooo...
 pause
 goto top
 
+:settings
 :setting
 cls
 echo SETTINGS               Version 1.0
@@ -358,16 +361,38 @@ call :c 0f "2] Uninstall ADK"
 call :c 0f "3] Repair ADK"
 call :c 0f "4] Remove Status Files"
 call :c 0f "5] Launch Cleanup"
-call :c 0f "6] Back to Menu"
-choice /c "123456" /n
+call :c 0f "6] Reset C:\ root copy."
+call :c 0f "7] Back to Menu"
+choice /c "1234567" /n
 if %errorlevel%==2 goto uninadk
 if %errorlevel%==3 goto repadk
-if %errorlevel%==6 goto top
+if %errorlevel%==7 goto top
 if %errorlevel%==4 goto delf
 if %errorlevel%==5 goto cleanupses
+if %errorlevel%==6 goto resetc
 if exist sound del /f /q sound & goto setting
 if not exist sound echo.> sound
 goto setting
+
+:resetc
+cls
+if exist "mount" (
+	echo Please unmount drive before resetting.
+	pause
+	goto top
+)
+call :c 0a "Preparing to reset Root copy of WinPE on C Drive."
+echo.
+echo This will reset the copy of WinPE that is in C:\WinPE_amd64\.
+echo This is the copy that is installed onto WinPE drives.
+echo If you made any changes to the root WinPE copy they will be lost.
+echo.
+echo Would you like to continue?
+choice /c yn
+if %errorlevel%==2 goto setting
+echo Removing old copy  . . .
+del /f /q "C:\WinPE_amd64"
+goto :skipnoadk
 
 :cleanupses
 cls
@@ -468,6 +493,7 @@ set _fail=false
 Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /commit
 if not exist sound echo  
 if not "%errorlevel%"=="0" set _fail=true
+del /f /q mount
 del /f /q type
 del /f /q time
 del /f /q date
@@ -559,7 +585,7 @@ type old.txt
 echo.
 echo ===================================================
 echo Are You Sure You want to continue with Unmount?
-echo :c c0 "THIS WILL DELETE ALL CHANGES MADE SINCE MOUNT!"
+call :c c0 "THIS WILL DELETE ALL CHANGES MADE SINCE MOUNT!"
 choice
 if %errorlevel%==2 goto top
 echo Preparing to discard changes . . .
@@ -887,6 +913,7 @@ call :c 0a "Would you like to set up the amd64 WinPE Folder now?"
 choice
 if %errorlevel%==2 exit /b
 ::temp12
+:skipnoadk
 cls
 call :c 0a "Setting Up Mount Folder."
 set error=no
