@@ -841,11 +841,11 @@ timeout /t 2 >nul
 if exist "%cd%\adksetup.exe" goto downloadedahalready
 if exist "C:\Windows\System32\curl.exe" (
 	echo Downloading Installation file using CURL.
-	curl http://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe --output "%cd%\adkSetup.exe"
+	curl https://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe --output "%cd%\adkSetup.exe"
 	goto downloadedahalready
 )
 echo downloading installation using BITSADMIN (Note: This may trigger some antiviruses as some malicious batch codes download files in a similar manner).
-bitsadmin /transfer myDownloadJob /download /priority High  http://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe "%cd%\adkSetup.exe"
+bitsadmin /transfer myDownloadJob /download /priority High  https://download.microsoft.com/download/6/8/9/689E62E5-C50F-407B-9C3C-B7F00F8C93C0/adk/adksetup.exe "%cd%\adkSetup.exe"
 if not %errorlevel%==0 goto errnoah
 :downloadedahalready
 call :c 0a "Download Completed. Launching. Install may take a while . . ."
